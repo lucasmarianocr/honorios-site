@@ -1,7 +1,7 @@
 # Honorio Croxatto — static site
 
-A plain HTML/CSS/JS rebuild of the Wix site, ready for S3 static website
-hosting. No build step, no dependencies — just three files plus assets.
+A plain HTML/CSS/JS rebuild of the Wix site, ready for GitHub Pages
+(or S3) static hosting. No build step, no dependencies.
 
 ```
 honorios-site/
@@ -11,6 +11,8 @@ honorios-site/
 ├── robots.txt
 └── error.html
 ```
+
+**🌐 Live at:** https://lucasmarianocr.github.io/honorios-site/
 
 ## What changed vs. the Wix export
 
@@ -22,72 +24,30 @@ honorios-site/
 - **Images still load from Wix's media CDN** (`static.wixstatic.com`).
   That CDN is separate from Wix hosting and will keep serving those files
   even after you cancel the Wix site plan — so the migration works as-is.
-  If you'd rather own the images outright (recommended long-term, in case
-  Wix ever changes that policy), see "Hosting your own images" below.
+  If you'd rather own the images outright (see "Hosting your own images"
+  below), you'll need to get the original files from the other PC.
 - The subscribe form and contact form no longer submit anywhere — Wix's
   form backend goes away with the migration. The form now just validates
   the email client-side. See "Forms on a static site" below for how to
   reconnect it.
 
-## Deploy to S3 (console)
+## GitHub Pages (current hosting)
 
-1. **Create the bucket.** S3 console → *Create bucket* → name it exactly
-   your domain if you're using a custom domain (e.g. `honoriosart.com`),
-   since that's required for a domain-mapped S3 website. Uncheck
-   "Block all public access" (static website buckets must be public-readable).
-2. **Enable static website hosting.** Bucket → *Properties* → *Static
-   website hosting* → Enable. Index document: `index.html`. Error
-   document: `error.html`.
-3. **Add a bucket policy** so anyone can read the objects (Bucket →
-   *Permissions* → *Bucket policy*):
+The site is already deployed to GitHub Pages at the URL above. To update:
 
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Sid": "PublicReadGetObject",
-         "Effect": "Allow",
-         "Principal": "*",
-         "Action": "s3:GetObject",
-         "Resource": "arn:aws:s3:::YOUR-BUCKET-NAME/*"
-       }
-     ]
-   }
-   ```
+1. Clone: `git clone https://github.com/lucasmarianocr/honorios-site.git`
+2. Make your changes, commit, and push to `main` — Pages auto-deploys.
 
-4. **Upload the files**, keeping the folder structure (`css/`, `js/` as
-   subfolders — drag the whole `honorios-site` folder contents in, or use
-   "Add folder").
-5. **Test it** at the *Bucket website endpoint* URL shown on the Static
-   website hosting page (looks like
-   `http://YOUR-BUCKET-NAME.s3-website-us-east-1.amazonaws.com`).
+### Custom domain (optional)
 
-## Deploy via CLI (faster for re-uploads)
+To use `honoriosart.com` instead of the `github.io` URL:
 
-```bash
-aws s3 mb s3://YOUR-BUCKET-NAME
-aws s3 website s3://YOUR-BUCKET-NAME/ --index-document index.html --error-document error.html
-aws s3 sync . s3://YOUR-BUCKET-NAME/ --exclude "README.md" --exclude ".git/*"
-aws s3api put-bucket-policy --bucket YOUR-BUCKET-NAME --policy file://bucket-policy.json
-```
-
-## Custom domain + HTTPS (recommended)
-
-Plain S3 website endpoints are HTTP-only. For `https://honoriosart.com`
-with the domain your dad already owns:
-
-1. Request a certificate for the domain in **AWS Certificate Manager**
-   (must be in `us-east-1` for CloudFront), validate via DNS.
-2. Create a **CloudFront distribution** with the S3 bucket's website
-   endpoint (not the bucket ARN) as the origin, attach the certificate,
-   add the domain as an alternate domain name (CNAME).
-3. Point the domain's DNS at CloudFront — either an ALIAS/A record in
-   **Route 53** if you move DNS there, or a CNAME at the current
-   registrar if it's not the apex domain.
-
-This also gets you CDN caching and compression for free, which the Wix
-site had built in.
+1. Go to repo → **Settings** → **Pages** → enter your custom domain.
+2. GitHub will verify ownership and auto-provision a TLS certificate.
+3. At your domain registrar (or DNS provider), add a CNAME record
+   pointing `www.honoriosart.com` → `lucasmarianocr.github.io`, or
+   a flat ANAME/ALIAS record for the apex domain.
+4. Pages auto-enforces HTTPS — no extra setup needed.
 
 ## Hosting your own images (optional)
 
